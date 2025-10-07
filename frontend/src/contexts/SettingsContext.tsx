@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState, useMemo } from 'react';
 
 interface SettingsContextType {
   darkMode: boolean;
@@ -8,19 +8,19 @@ interface SettingsContextType {
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
 
 export function SettingsProvider({ children }: { children: React.ReactNode }) {
-  const [darkMode, setDarkMode] = useState(false);
+  // Initialize dark mode: prefer explicit user setting in localStorage; otherwise use system preference
+  const getInitialDark = () => {
+    const stored = localStorage.getItem('darkMode');
+    if (stored === '1') return true;
+    if (stored === '0') return false;
+    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+  };
 
-  // Load dark mode from localStorage on mount
-  useEffect(() => {
-    setDarkMode(localStorage.getItem('darkMode') === '1');
-  }, []);
+  const [darkMode, setDarkMode] = useState<boolean>(() => getInitialDark());
 
-  // Persist and apply dark mode
+  // Apply dark class and persist explicit user preference when it changes
   useEffect(() => {
     if (darkMode) {
-      document.body.classList.add('dark');
-      localStorage.setItem('darkMode', '1');
-    } else if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
       document.body.classList.add('dark');
       localStorage.setItem('darkMode', '1');
     } else {
@@ -29,8 +29,30 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     }
   }, [darkMode]);
 
+  // If user hasn't set an explicit preference, follow system changes
+  useEffect(() => {
+    const stored = localStorage.getItem('darkMode');
+    if (stored === '1' || stored === '0') return; // user preference exists
+
+    const mq = window.matchMedia('(prefers-color-scheme: dark)');
+    const handler = (e: MediaQueryListEvent) => setDarkMode(e.matches);
+    if (mq.addEventListener) mq.addEventListener('change', handler);
+    else {
+      // addListener is deprecated but still present on some browsers; fall back using any-cast
+      (mq as any).addListener(handler);
+    }
+    return () => {
+      if (mq.removeEventListener) mq.removeEventListener('change', handler);
+      else {
+        (mq as any).removeListener(handler);
+      }
+    };
+  }, []);
+
+  const providerValue = useMemo(() => ({ darkMode, setDarkMode }), [darkMode]);
+
   return (
-    <SettingsContext.Provider value={{ darkMode, setDarkMode }}>
+    <SettingsContext.Provider value={providerValue}>
       {children}
     </SettingsContext.Provider>
   );
