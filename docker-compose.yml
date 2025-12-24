@@ -13,13 +13,7 @@ services:
         - 'space-mongodb:/data/db'
         - './api/src/main/init-mongo.sh:/docker-entrypoint-initdb.d/init-mongo.sh'
       networks:
-        - space-network
-      # healthcheck:
-      #   test: [ "CMD", "mongo", "--username", "${MONGO_INITDB_ROOT_USERNAME:-root}", "--password", "${MONGO_INITDB_ROOT_PASSWORD:-4dm1n}", "--authenticationDatabase", "admin", "--eval", "db.adminCommand('ping')" ]
-      #   interval: 5s
-      #   timeout: 5s
-      #   retries: 3
-      #   start_period: 5s
+        - socialbeats-network
   redis:
     image: redis:7.4.2
     container_name: space-redis
@@ -31,20 +25,21 @@ services:
       start_period: 5s
     restart: always
     volumes:
-      - 'redis_data:/data'
+      - 'space-redis-data:/data'
     networks:
-      - space-network
+      - socialbeats-network
   space-server:
     restart: always
     container_name: space-server
-    build:
-        context: ./api/
-        dockerfile: ./docker/production/Dockerfile
+    image: socialbeats/space-server:1.0.1
+    # build:
+    # context: ./api/
+    # dockerfile: ./docker/production/Dockerfile
     environment:
       ENVIRONMENT: production
       MONGO_URI: mongodb://mongoUser:mongoPassword@mongodb:27017/space_db
       REDIS_URL: redis://redis:6379
-      JWT_SECRET: test_secret
+      JWT_SECRET: secret
       JWT_SALT: wgv~eb6v=VWwC9GIG1q6rZ]J.tUM(M
       JWT_EXPIRATION: 1d
     volumes:
@@ -53,7 +48,7 @@ services:
       - mongodb
       - redis
     networks:
-      - space-network
+      - socialbeats-network
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/api/v1/healthcheck"]
       interval: 1m30s
@@ -62,36 +57,38 @@ services:
       start_period: 30s
   space-client:
     container_name: space-client
-    build:
-      context: ./frontend/
-      dockerfile: ./docker/Dockerfile
-      args:
-        VITE_ENVIRONMENT: production
-        VITE_SPACE_BASE_URL: http://localhost:5403/api/v1
+    image: socialbeats/space-client:1.0.1
+    # build:
+    #   context: ./frontend/
+    #   dockerfile: ./docker/Dockerfile
+    #   args:
+    #     VITE_ENVIRONMENT: production
+    #     VITE_SPACE_BASE_URL: http://localhost:5403/api/v1
     depends_on:
       - space-server
     networks:
-      - space-network
+      - socialbeats-network
   nginx:
     restart: always
     container_name: space-nginx
-    build:
-        context: ./nginx
-        dockerfile: ./Dockerfile
+    image: socialbeats/space-nginx:1.0.0
+    # build:
+    #     context: ./nginx
+    #     dockerfile: ./Dockerfile
     ports:
       - 5403:5403
     depends_on:
       - space-server
       - space-client
     networks:
-      - space-network
+      - socialbeats-network
 volumes:
   space-mongodb:
     driver: local
   space-statics:
     driver: local
-  redis_data:
+  space-redis-data:
     driver: local
 networks:
-  space-network:
+  socialbeats-network:
     driver: bridge
