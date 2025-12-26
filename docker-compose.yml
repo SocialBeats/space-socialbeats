@@ -91,5 +91,5 @@ volumes:
     driver: local
 networks:
   socialbeats-network:
+    name: socialbeats-network
     driver: bridge
-    external: true
