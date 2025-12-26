@@ -1,5 +1,5 @@
 services:
-  mongodb:
+  space-mongodb:
       image: mongo:7.0.16
       container_name: space-mongodb
       environment:
@@ -14,7 +14,7 @@ services:
         - './api/src/main/init-mongo.sh:/docker-entrypoint-initdb.d/init-mongo.sh'
       networks:
         - socialbeats-network
-  redis:
+  space-redis:
     image: redis:7.4.2
     container_name: space-redis
     healthcheck:
@@ -37,16 +37,16 @@ services:
     # dockerfile: ./docker/production/Dockerfile
     environment:
       ENVIRONMENT: production
-      MONGO_URI: mongodb://mongoUser:mongoPassword@mongodb:27017/space_db
-      REDIS_URL: redis://redis:6379
+      MONGO_URI: mongodb://mongoUser:mongoPassword@space-mongodb:27017/space_db
+      REDIS_URL: redis://space-redis:6379
       JWT_SECRET: secret
       JWT_SALT: wgv~eb6v=VWwC9GIG1q6rZ]J.tUM(M
       JWT_EXPIRATION: 1d
     volumes:
       - 'space-statics:/usr/src/server/public'
     depends_on:
-      - mongodb
-      - redis
+      - space-mongodb
+      - space-redis
     networks:
       - socialbeats-network
     healthcheck:
