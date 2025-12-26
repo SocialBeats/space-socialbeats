@@ -92,3 +92,4 @@ volumes:
 networks:
   socialbeats-network:
     driver: bridge
+    external: true
