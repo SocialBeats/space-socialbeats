@@ -21,12 +21,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
 
-  const isDevelopmentEnvironment: boolean = import.meta.env.VITE_ENVIRONMENT === "development"
+  const isDevelopmentEnvironment: boolean =
+    window.RUNTIME_CONFIG?.VITE_ENVIRONMENT === "development" ||
+    import.meta.env.VITE_ENVIRONMENT === "development";
 
   const [isAuthenticated, setIsAuthenticated] = useState(isDevelopmentEnvironment);
   const [user, setUser] = useState<UserData>({
     username: isDevelopmentEnvironment ? "devUser" : "",
-    apiKey: isDevelopmentEnvironment ? import.meta.env.VITE_SPACE_ADMIN_API_KEY : "",
+    apiKey: isDevelopmentEnvironment
+      ? window.RUNTIME_CONFIG?.VITE_SPACE_ADMIN_API_KEY || import.meta.env.VITE_SPACE_ADMIN_API_KEY || ""
+      : "",
     role: isDevelopmentEnvironment ? "ADMIN" : "",
   });
 

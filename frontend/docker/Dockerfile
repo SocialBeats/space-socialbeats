@@ -24,6 +24,7 @@ COPY ./tsconfig.app.json .
 COPY ./tsconfig.node.json .
 COPY ./vite.config.ts .
 COPY ./index.html .
+COPY ./public ./public
 
 ARG VITE_ENVIRONMENT
 ARG VITE_SPACE_BASE_URL
